@@ -32,7 +32,35 @@ begin
 	else if(CE)
 	begin
 		case{MODE,CMD}
-		
+		5'b1_0000: 	// 0:ADD	
+		5'b1_0001:	// 1:SUB	
+		5'b1_0010:	// 2:ADD_CIN
+		5'b1_0011:	// 3:SUB_CIN	
+		5'b1_0100:	// 4:INC_A	
+		5'b1_0101:	// 5:DEC_A	
+		5'b1_0110:	// 6:INC_B	
+		5'b1_0111:	// 7:DEC_B	
+		5'b1_1000:	// 8:CMP	
+		5'b1_1001:	// 9: OP 9	
+		5'b1_1010:	// 10:OP 10	
+		5'b1_1011:	// 11:OP 11	
+		5'b1_1100:	// 12:OP 12	
+
+		5'b0_0000: 	// 0:AND	
+		5'b0_0001:	// 1:NAND	
+		5'b0_0010:	// 2:OR
+		5'b0_0011:	// 3:NOR	
+		5'b0_0100:	// 4:XOR	
+		5'b0_0101:	// 5:XNOR	
+		5'b0_0110:	// 6:NOT_A
+		5'b0_0111:	// 7:NOT_B	
+		5'b0_1000:	// 8:SHR1_A	
+		5'b0_1001:	// 9:SHL1_A	
+		5'b0_1010:	// 10:SHR1_B	
+		5'b0_1011:	// 11:SHL1_B	
+		5'b0_1100:	// 12:ROL_A_B	
+		5'b0_1101:	// 13:ROR_A_B	
+	
 		endcase		
 	end
 	else
@@ -64,9 +92,10 @@ begin
 	begin
 		count <=1'b0;
 	end
-	else if(current_operation == {CMD,MODE})
+	else if	(count_EN)
 	begin
-		else if(count_EN)
+		else if(current_operation == {CMD,MODE})
+
 		begin
 			if(count >= 3)
 				count <=1'b0;
