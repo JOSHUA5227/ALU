@@ -1,6 +1,6 @@
-module ALU(# parameter WIDTH = 8)(OPA,OPB,CIN,CLK,RST,CE,MODE,INP_VALID,CMD,RES,OFLOW,COUT,G,L,E,ERR);
+module ALU #(parameter WIDTH = 8)(OPA,OPB,CIN,CLK,RST,CE,MODE,INP_VALID,CMD,RES,OFLOW,COUT,G,L,E,ERR);
 
-input wire clk,rst;
+input wire CLK,RST;
 
 input wire [WIDTH-1:0] OPA,OPB;
 
@@ -19,35 +19,50 @@ reg [1:0] count; // 3 bit counter
 reg [4:0] current_operation; // for resetting counter
 reg [WIDTH-1:0] OPA_reg,OPB_reg; // temp registers for multiplication
 reg [1:0] valid_reg; //temp register for multiplication
-
 reg count_EN; 
 
-always@(posedge clk or posedge rst)
+wire clk1;
+
+assign clk1 = CLK & CE;
+
+reg [(2*WIDTH)- 1 : 0] next_res;
+reg next_oflow,next_cout,next_g,next_l,next_e,next_err;
+
+
+always@(posedge clk1 or posedge RST)
 begin
-	if(rst)
+        if(RST)
+        begin
+                RES <= 'b0;
+                OFLOW <= 1'b0;
+                COUT <= 1'b0;
+                {G,L,E} <= 3'b0;
+                ERR <= 1'b0;
+        end
+        else
 	begin
-		RES <= 'b0;
-		OFLOW <= 1'b0;
-		COUT <= 1'b0;
-		{G,L,E} <= 3'b0;
-		ERR <= 1'b0;
-		OPA_reg <= 'b0;
-		OPB_reg <= 'b0;
-		count_EN <= 1'b0;
+		RES <= next_res;
+                OFLOW <= next_oflow;
+                COUT <= next_cout;
+                {G,L,E} <= {next_g,next_l,next_e};
+                ERR <= next_err;
 	end
-	else if(CE)
-	begin
-		case{MODE,CMD}
+
+end
+always@(*)
+begin
+	{next_res,next_oflow,next_cout,next_g,next_l,next_e,next_err} = 'b0;
+		case({MODE,CMD})
 		5'b1_0000: 	// 0:ADD
 		begin
 			if(INP_VALID == 2'b11)
 			begin
-				{COUT,RES[WIDTH-1:0]} <= OPA + OPB;
-				RES <= OPA + OPB;
-				ERR <= 1'b0;
+				{next_cout,next_res[WIDTH-1:0]} = OPA + OPB;
+				next_res = OPA + OPB;
+				next_err = 1'b0;
 			end
 			else
-				ERR <=1'b1;
+				next_err =1'b1;
 
 		end
 
@@ -55,87 +70,87 @@ begin
 		begin
 			if(INP_VALID == 2'b11)
                         begin
-                                {OFLOW,RES[WIDTH-1:0]} <= OPA - OPB;
-                                RES <= OPA - OPB;
-                                ERR <= 1'b0;
-                        end
+                                {next_oflow,next_res[WIDTH-1:0]} = OPA - OPB;
+                                next_res = OPA - OPB;
+                                next_err = 1'b0;
+                        end 
                         else
-                                ERR <=1'b1;
+                                next_err = 1'b1;
 		end
 
 		5'b1_0010:	// 2:ADD_CIN
 		begin
                         if(INP_VALID == 2'b11)
                         begin
-                                {COUT,RES[WIDTH-1:0]} <= OPA + OPB + CIN;
-                                RES <= OPA + OPB + CIN;
-                                ERR <= 1'b0;
+                                {next_cout,next_res[WIDTH-1:0]} = OPA + OPB + CIN;
+                                next_res = OPA + OPB + CIN;
+                                next_err = 1'b0;
                         end
                         else
-                                ERR <=1'b1;
+                                next_err = 1'b1;
                 end
 
 		5'b1_0011:	// 3:SUB_CIN	
 		begin
                         if(INP_VALID == 2'b11)
                         begin
-                                {OFLOW,RES[WIDTH-1:0]} <= OPA - OPB - CIN;
-                                RES <= OPA - OPB - CIN;
-                                ERR <= 1'b0;
+                                {next_oflow,next_res[WIDTH-1:0]} = OPA - OPB - CIN;
+                                next_res = OPA - OPB - CIN;
+                                next_err = 1'b0;
                         end
                         else
-                                ERR <=1'b1;
+                                next_err = 1'b1;
                 end
 
 		5'b1_0100:	// 4:INC_A	
 		begin
 			if(INP_VALID[0] == 1'b1)
 			begin
-				RES <= OPA + 1;
+				next_res = OPA + 1;
 			end
 			else
-				ERR <= 1'b1;
+				next_err = 1'b1;
 		end
 
 		5'b1_0101:	// 5:DEC_A	
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
-                                RES <= OPA - 1;
+                               	next_res = OPA - 1;
                         end
                         else
-                                ERR <= 1'b1;
+                                next_err = 1'b1;
                 end
 
 		5'b1_0110:	// 6:INC_B
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                RES <= OPB + 1;
+                                next_res = OPB + 1;
                         end
                         else
-                                ERR <= 1'b1;
+                                next_err = 1'b1;
                 end
 
 		5'b1_0111:	// 7:DEC_B	
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                RES <= OPB - 1;
+                                next_res = OPB - 1;
                         end
                         else
-                                ERR <= 1'b1;
+                                next_err = 1'b1;
                 end
 
 		5'b1_1000:	// 8:CMP
 		begin
 			if(INP_VALID == 2'b11)
 			begin
-				{G,L,E} <= (OP == OPB) ? 3'b001: (OPA > OPB) ? 3'b100:3'b010;
-				ERR <= 1'b0;
+				{next_g,next_l,next_e} = (OPA == OPB) ? 3'b001: (OPA > OPB) ? 3'b100:3'b010;
+				next_err = 1'b0;
 			end
 			else
-				ERR <= 1'b1;
+				next_err <= 1'b1;
 		end
 
 		5'b1_1001:	// 9: OP 9
@@ -151,13 +166,13 @@ begin
 			begin
 				if(count == 2)
 				begin
-					if(valid_reg <= 2'b11)
+					if(valid_reg == 2'b11)
 					begin
-						RES <= OPA_reg * OPB_reg;
-						ERR <= 1'b0;
+						next_res = (OPA_reg+1) * (OPB_reg+1);
+						next_err = 1'b0;
 					end
 					else
-						ERR <= 1'b1;
+						next_err = 1'b1;
 				end
 				//else do nothing	
 			end
@@ -173,15 +188,15 @@ begin
                         end
                         else
                         begin
-                                if(count == 2)
+                                if(count == 1)
                                 begin
-                                        if(valid_reg <= 2'b11)
+                                        if(valid_reg == 2'b11)
                                         begin
-                                                RES <= (OPA_reg << 1) * OPB_reg;
-                                                ERR <= 1'b0;
+                                                next_res = (OPA_reg << 1) * OPB_reg;
+                                                next_err = 1'b0;
                                         end
                                         else
-                                                ERR <= 1'b1;
+                                                next_err = 1'b1;
                                 end
                                 //else do nothing
                         end
@@ -191,43 +206,188 @@ begin
 		begin
 			if(INP_VALID == 2'b11)
 			begin
-				
+				{next_g,next_l,next_e} = ($signed(OPA) == $signed(OPB)) ? 3'b001: ($signed(OPA) > $signed(OPB)) ? 3'b100:3'b010;
+                                next_err = 1'b0;	
+				next_res = OPA + OPB;
+
+				next_oflow = ( (OPA[WIDTH-1] == OPB[WIDTH -1]) != next_res[WIDTH-1]) ? 1:0;
 			end
 			else
-				ERR <= 1'b1;
+				next_err = 1'b1;
 		end
 		5'b1_1100:	// 12:OP 12	
-		5'b0_0000: 	// 0:AND	
-		5'b0_0001:	// 1:NAND	
+		begin
+		if(INP_VALID == 2'b11)
+                        begin
+                                {next_g,next_l,next_e} = ($signed(OPA) == $signed(OPB)) ? 3'b001: ($signed(OPA) > $signed(OPB)) ? 3'b100:3'b010;
+                                next_err = 1'b0;
+                                next_res = OPA - OPB;
+
+				next_oflow = ( (OPA[WIDTH-1] == OPB[WIDTH -1]) != next_res[WIDTH-1]) ? 1:0;
+                        end
+                        else
+                                next_err = 1'b1;
+		end
+
+		//LOGICAL OPERATIONS
+
+		5'b0_0000: 	// 0:AND
+		begin
+			if(INP_VALID == 2'b11)
+			begin
+				next_res[WIDTH - 1] = OPA  & OPB;
+				next_err = 1'b0;
+			end
+			else
+				next_err = 1'b1;
+		end
+		5'b0_0001:	// 1:NAND
+		 begin
+                        if(INP_VALID == 2'b11)
+                        begin
+                                next_res[WIDTH - 1] = ~(OPA  & OPB);
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		5'b0_0010:	// 2:OR
-		5'b0_0011:	// 3:NOR	
-		5'b0_0100:	// 4:XOR	
+		 begin
+                        if(INP_VALID == 2'b11)
+                        begin
+                                next_res[WIDTH - 1]  = OPA | OPB;
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
+		5'b0_0011:	// 3:NOR
+		begin
+                        if(INP_VALID == 2'b11)
+                        begin
+                                next_res[WIDTH - 1]  = ~(OPA  | OPB);
+                                next_err= 1'b0;
+                        end
+                        else
+                                next_err= 1'b1;
+                end	
+		5'b0_0100:	// 4:XOR
+		begin
+                        if(INP_VALID == 2'b11)
+                        begin
+                                next_res[WIDTH - 1]  = (OPA  ^ OPB);
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		5'b0_0101:	// 5:XNOR	
+		begin
+                        if(INP_VALID == 2'b11)
+                        begin
+                                next_res[WIDTH - 1] = ~(OPA  ^ OPB);
+                                next_err = 1'b0;
+                        end
+                        else		
+                                next_err = 1'b1;
+                end
 		5'b0_0110:	// 6:NOT_A
+		begin
+                        if(INP_VALID[0] == 1'b1)
+                        begin
+                                next_res[WIDTH - 1] = ~(OPA);
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		5'b0_0111:	// 7:NOT_B	
+		begin
+                        if(INP_VALID[1] == 1'b1)
+                        begin
+                                next_res[WIDTH - 1] = ~(OPB);
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		5'b0_1000:	// 8:SHR1_A	
+		begin
+                        if(INP_VALID[0] == 1'b1)
+                        begin
+                                next_res[WIDTH - 1] = OPA >> 1;
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		5'b0_1001:	// 9:SHL1_A	
+		begin
+                        if(INP_VALID[0] == 1'b1)
+                        begin
+                                next_res[WIDTH - 1] = OPA << 1;
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		5'b0_1010:	// 10:SHR1_B	
+		 begin
+                        if(INP_VALID[1] == 1'b1)
+                        begin
+                                next_res[WIDTH - 1] = OPB >> 1;
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		5'b0_1011:	// 11:SHL1_B	
+		begin
+                        if(INP_VALID[1] == 1'b1)
+                        begin
+                                next_res[WIDTH - 1] = OPB << 1;
+                                next_err = 1'b0;
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		5'b0_1100:	// 12:ROL_A_B	
+		begin
+			if(INP_VALID == 2'b11)
+			begin
+				if(|OPB[WIDTH-1: ($clog2(WIDTH)+1) ])
+					next_err =1'b1;
+				else
+				begin
+					next_err =1'b0;
+				end	
+				next_res[WIDTH - 1] = { OPA << OPB[ ($clog2(WIDTH)-1):0],OPA >> OPB[ ($clog2(WIDTH)-1):0] };
+			end
+			else
+				next_err <= 1'b1;
+		end
 		5'b0_1101:	// 13:ROR_A_B	
-	
+		 begin
+                        if(INP_VALID == 2'b11)
+                        begin
+                                if(|OPB[WIDTH-1: ($clog2(WIDTH)+1) ])
+                                        next_err =1'b1;
+                                else
+                                begin
+                                        next_err =1'b0;
+                                end
+				next_res[WIDTH - 1] = { OPA >> OPB[($clog2(WIDTH)-1):0] ,OPA << OPB[ ($clog2(WIDTH) -1 ):0] };
+                        end
+                        else
+                                next_err = 1'b1;
+                end
 		endcase		
-	end
-	else
-	begin
-		RES <= RES;
-                OFLOW <= OFLOW;
-                COUT <= COUT;
-                {G,L,E} <= {G,L,E};
-                ERR <= ERR;
-	end
 end
 
 // storing previous operation
-always@(posedge clk or posedge rst)
+always@(posedge clk1 or posedge RST)
 begin
-	if(rst)
+	if(RST)
 	begin
 		current_operation <= 5'b0;
 	end
@@ -235,18 +395,16 @@ begin
 		current_operation <= {CMD,MODE};
 end
 
-
 // counter logic
-always@(posedge clk or posedge rst)
+always@(posedge clk1 or posedge RST)
 begin
-	if(rst)
+	if(RST)
 	begin
 		count <=1'b0;
 	end
 	else if	(count_EN)
 	begin
-		else if(current_operation == {CMD,MODE})
-
+		if(current_operation == {CMD,MODE})
 		begin
 			if(count >= 2)
 				count <=1'b0;
