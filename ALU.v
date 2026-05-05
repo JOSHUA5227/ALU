@@ -17,7 +17,10 @@ output reg OFLOW,COUT,G,L,E,ERR;
 
 reg [1:0] count; // 3 bit counter
 reg [4:0] current_operation; // for resetting counter
+reg [WIDTH-1:0] OPA_reg,OPB_reg; // temp registers for multiplication
+reg [1:0] valid_reg; //temp register for multiplication
 
+reg count_EN; 
 
 always@(posedge clk or posedge rst)
 begin
@@ -28,24 +31,172 @@ begin
 		COUT <= 1'b0;
 		{G,L,E} <= 3'b0;
 		ERR <= 1'b0;
+		OPA_reg <= 'b0;
+		OPB_reg <= 'b0;
+		count_EN <= 1'b0;
 	end
 	else if(CE)
 	begin
 		case{MODE,CMD}
-		5'b1_0000: 	// 0:ADD	
-		5'b1_0001:	// 1:SUB	
-		5'b1_0010:	// 2:ADD_CIN
-		5'b1_0011:	// 3:SUB_CIN	
-		5'b1_0100:	// 4:INC_A	
-		5'b1_0101:	// 5:DEC_A	
-		5'b1_0110:	// 6:INC_B	
-		5'b1_0111:	// 7:DEC_B	
-		5'b1_1000:	// 8:CMP	
-		5'b1_1001:	// 9: OP 9	
-		5'b1_1010:	// 10:OP 10	
-		5'b1_1011:	// 11:OP 11	
-		5'b1_1100:	// 12:OP 12	
+		5'b1_0000: 	// 0:ADD
+		begin
+			if(INP_VALID == 2'b11)
+			begin
+				{COUT,RES[WIDTH-1:0]} <= OPA + OPB;
+				RES <= OPA + OPB;
+				ERR <= 1'b0;
+			end
+			else
+				ERR <=1'b1;
 
+		end
+
+		5'b1_0001:	// 1:SUB	
+		begin
+			if(INP_VALID == 2'b11)
+                        begin
+                                {OFLOW,RES[WIDTH-1:0]} <= OPA - OPB;
+                                RES <= OPA - OPB;
+                                ERR <= 1'b0;
+                        end
+                        else
+                                ERR <=1'b1;
+		end
+
+		5'b1_0010:	// 2:ADD_CIN
+		begin
+                        if(INP_VALID == 2'b11)
+                        begin
+                                {COUT,RES[WIDTH-1:0]} <= OPA + OPB + CIN;
+                                RES <= OPA + OPB + CIN;
+                                ERR <= 1'b0;
+                        end
+                        else
+                                ERR <=1'b1;
+                end
+
+		5'b1_0011:	// 3:SUB_CIN	
+		begin
+                        if(INP_VALID == 2'b11)
+                        begin
+                                {OFLOW,RES[WIDTH-1:0]} <= OPA - OPB - CIN;
+                                RES <= OPA - OPB - CIN;
+                                ERR <= 1'b0;
+                        end
+                        else
+                                ERR <=1'b1;
+                end
+
+		5'b1_0100:	// 4:INC_A	
+		begin
+			if(INP_VALID[0] == 1'b1)
+			begin
+				RES <= OPA + 1;
+			end
+			else
+				ERR <= 1'b1;
+		end
+
+		5'b1_0101:	// 5:DEC_A	
+		begin
+                        if(INP_VALID[0] == 1'b1)
+                        begin
+                                RES <= OPA - 1;
+                        end
+                        else
+                                ERR <= 1'b1;
+                end
+
+		5'b1_0110:	// 6:INC_B
+		begin
+                        if(INP_VALID[1] == 1'b1)
+                        begin
+                                RES <= OPB + 1;
+                        end
+                        else
+                                ERR <= 1'b1;
+                end
+
+		5'b1_0111:	// 7:DEC_B	
+		begin
+                        if(INP_VALID[1] == 1'b1)
+                        begin
+                                RES <= OPB - 1;
+                        end
+                        else
+                                ERR <= 1'b1;
+                end
+
+		5'b1_1000:	// 8:CMP
+		begin
+			if(INP_VALID == 2'b11)
+			begin
+				{G,L,E} <= (OP == OPB) ? 3'b001: (OPA > OPB) ? 3'b100:3'b010;
+				ERR <= 1'b0;
+			end
+			else
+				ERR <= 1'b1;
+		end
+
+		5'b1_1001:	// 9: OP 9
+		begin
+			count_EN <= 1'b1;
+			if(count == 0)
+			begin
+				OPA_reg <= OPA;
+				OPB_reg <= OPB;
+				valid_reg <= INP_VALID;
+			end
+			else
+			begin
+				if(count == 2)
+				begin
+					if(valid_reg <= 2'b11)
+					begin
+						RES <= OPA_reg * OPB_reg;
+						ERR <= 1'b0;
+					end
+					else
+						ERR <= 1'b1;
+				end
+				//else do nothing	
+			end
+		end
+		5'b1_1010:	// 10:OP 10	
+		 begin
+                        count_EN <= 1'b1;
+                        if(count == 0)
+                        begin
+                                OPA_reg <= OPA;
+                                OPB_reg <= OPB;
+                                valid_reg <= INP_VALID;
+                        end
+                        else
+                        begin
+                                if(count == 2)
+                                begin
+                                        if(valid_reg <= 2'b11)
+                                        begin
+                                                RES <= (OPA_reg << 1) * OPB_reg;
+                                                ERR <= 1'b0;
+                                        end
+                                        else
+                                                ERR <= 1'b1;
+                                end
+                                //else do nothing
+                        end
+                end
+
+		5'b1_1011:	// 11:OP 11	
+		begin
+			if(INP_VALID == 2'b11)
+			begin
+				
+			end
+			else
+				ERR <= 1'b1;
+		end
+		5'b1_1100:	// 12:OP 12	
 		5'b0_0000: 	// 0:AND	
 		5'b0_0001:	// 1:NAND	
 		5'b0_0010:	// 2:OR
@@ -97,7 +248,7 @@ begin
 		else if(current_operation == {CMD,MODE})
 
 		begin
-			if(count >= 3)
+			if(count >= 2)
 				count <=1'b0;
 			else
 				count <= count + 1;
