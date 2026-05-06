@@ -183,7 +183,7 @@ begin
 		5'b1_1001:	// 9: INCREMENT AND MUL
 		begin
 			count_EN = 1'b1;
-				if(count == MAX_COUNT)
+				if(count == MAX_COUNT-1)
 				begin
 					if(valid_reg == 2'b11)
 					begin
@@ -199,7 +199,7 @@ begin
 		 begin
                         count_EN = 1'b1;
                         begin
-                                if(count == MAX_COUNT)
+                                if(count == MAX_COUNT - 1)
                                 begin
                                         if(valid_reg == 2'b11)
                                         begin
@@ -416,7 +416,7 @@ begin
 	begin
 		if(current_operation == {MODE,CMD})
 		begin
-			if(count >= (MAX_COUNT))
+			if(count >= (MAX_COUNT - 1))
 				count <=1'b0 + flag;
 			else
 				count <= count + 1;
