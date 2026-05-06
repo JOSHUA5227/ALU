@@ -171,7 +171,7 @@ begin
 			end
 			else
 			begin
-				if(count == MAX_COUNT - flag)
+				if(count == MAX_COUNT)
 				begin
 					if(valid_reg == 2'b11)
 					begin
@@ -199,7 +199,7 @@ begin
                         end
                         else
                         begin
-                                if(count == MAX_COUNT - flag)
+                                if(count == MAX_COUNT)
                                 begin
                                         if(valid_reg == 2'b11)
                                         begin
@@ -421,15 +421,15 @@ begin
 	begin
 		if(current_operation == {CMD,MODE})
 		begin
-			if(count >= (MAX_COUNT - flag))
-				count <=1'b0;
+			if(count >= (MAX_COUNT))
+				count <=1'b0 + flag;
 			else
 				count <= count + 1;
 		end
 		else
-			count <= 1'b0;
+			count <= 1'b0 + flag;
 	end
 	else
-			count <= 1'b0;
+			count <= 1'b0 + flag;
 end
 endmodule
