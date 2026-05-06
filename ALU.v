@@ -29,7 +29,7 @@ reg [(2*WIDTH)- 1 : 0] next_res;
 reg next_oflow,next_cout,next_g,next_l,next_e,next_err;
 
 parameter MAX_COUNT = 2;
-reg flag; // pipelining
+reg flag = 1'b0;
 
 always@(posedge clk1 or posedge RST)
 begin
@@ -53,12 +53,32 @@ begin
                 COUT <= next_cout;
                 {G,L,E} <= {next_g,next_l,next_e};
                 ERR <= next_err;
+
+		if(count == 0 && ({MODE,CMD} == 5'b1_1001 || {MODE,CMD} == 5'b1_1010))
+		begin
+			OPA_reg <= OPA;
+			OPB_reg <= OPB;
+			valid_reg <= INP_VALID;
+		end
+		else if (count == 2)
+		begin
+			OPA_reg <= OPA;
+			OPB_reg <= OPB;
+			valid_reg <= INP_VALID;
+			flag <=1'b1;
+		end
+		else
+		begin
+			OPA_reg <= OPA_reg;
+			OPB_reg <= OPB_reg;
+			valid_reg <= valid_reg;
+		end
 	end
 
 end
 always@(*)
 begin
-	{next_res,next_oflow,next_cout,next_g,next_l,next_e,next_err} = 'b0;
+	{next_oflow,next_cout,next_g,next_l,next_e,next_err,count_EN} = 'b0;
 		case({MODE,CMD})
 		5'b1_0000: 	// 0:ADD
 		begin
@@ -163,69 +183,44 @@ begin
 		5'b1_1001:	// 9: INCREMENT AND MUL
 		begin
 			count_EN = 1'b1;
-			if(count == 0)
-			begin
-				OPA_reg = OPA;
-				OPB_reg = OPB;
-				valid_reg = INP_VALID;
-			end
-			else
-			begin
 				if(count == MAX_COUNT)
 				begin
 					if(valid_reg == 2'b11)
 					begin
-						next_res = (OPA_reg+1) * (OPB_reg+1);
+						next_res = (OPA_reg+ 1) * (OPB_reg+ 1);
 						next_err = 1'b0;
-						flag = 1'b1;
-						OPA_reg = OPA;
-                                                OPB_reg = OPB;
-                                                valid_reg = INP_VALID;
 					end
 					else
 						next_err = 1'b1;
 				end
 				//else do nothing	
-			end
 		end
 		5'b1_1010:	// 10: MUL WITH LEFT SHIFT
 		 begin
                         count_EN = 1'b1;
-                        if(count == 0)
-                        begin
-                                OPA_reg = OPA;
-                                OPB_reg = OPB;
-                                valid_reg = INP_VALID;
-                        end
-                        else
                         begin
                                 if(count == MAX_COUNT)
                                 begin
                                         if(valid_reg == 2'b11)
                                         begin
-                                                next_res = (OPA_reg << 1) * OPB_reg;
+						next_res = (OPA_reg << 1) *(OPB_reg);
                                                 next_err = 1'b0;
-						flag =1'b1;
-						OPA_reg = OPA;
-                                		OPB_reg = OPB;
-                                		valid_reg = INP_VALID;
                                         end
                                         else
                                                 next_err = 1'b1;
                                 end
                                 //else do nothing
                         end
-                end
-
+		end
 		5'b1_1011:	// 11: SIGNED ADDITION WITH SIGNED GLE	
 		begin
 			if(INP_VALID == 2'b11)
 			begin
 				{next_g,next_l,next_e} = ($signed(OPA) == $signed(OPB)) ? 3'b001: ($signed(OPA) > $signed(OPB)) ? 3'b100:3'b010;
                                 next_err = 1'b0;	
-				next_res = OPA + OPB;
+				next_res = $signed(OPA) + $signed(OPB);
 
-				next_oflow = ( (OPA[WIDTH-1] == OPB[WIDTH -1]) != next_res[WIDTH-1]) ? 1:0;
+				next_oflow = ( (OPA[WIDTH-1] == OPB[WIDTH -1]) && (next_res[WIDTH-1] != OPA[WIDTH-1] ) )? 1:0;
 			end
 			else
 				next_err = 1'b1;
@@ -236,7 +231,7 @@ begin
                         begin
                                 {next_g,next_l,next_e} = ($signed(OPA) == $signed(OPB)) ? 3'b001: ($signed(OPA) > $signed(OPB)) ? 3'b100:3'b010;
                                 next_err = 1'b0;
-                                next_res = OPA - OPB;
+                                next_res = $signed(OPA) - $signed(OPB);
 
 				next_oflow = ( (OPA[WIDTH-1] != OPB[WIDTH -1]) && (next_res[WIDTH-1] != OPA[WIDTH-1] ) )? 1:0;
                         end
@@ -250,7 +245,7 @@ begin
 		begin
 			if(INP_VALID == 2'b11)
 			begin
-				next_res[WIDTH - 1] = OPA  & OPB;
+				next_res[WIDTH - 1:0] = OPA  & OPB;
 				next_err = 1'b0;
 			end
 			else
@@ -260,7 +255,7 @@ begin
 		 begin
                         if(INP_VALID == 2'b11)
                         begin
-                                next_res[WIDTH - 1] = ~(OPA  & OPB);
+                                next_res[WIDTH - 1:0] = ~(OPA  & OPB);
                                 next_err = 1'b0;
                         end
                         else
@@ -270,7 +265,7 @@ begin
 		 begin
                         if(INP_VALID == 2'b11)
                         begin
-                                next_res[WIDTH - 1]  = OPA | OPB;
+                                next_res[WIDTH - 1:0]  = OPA | OPB;
                                 next_err = 1'b0;
                         end
                         else
@@ -280,7 +275,7 @@ begin
 		begin
                         if(INP_VALID == 2'b11)
                         begin
-                                next_res[WIDTH - 1]  = ~(OPA  | OPB);
+                                next_res[WIDTH - 1:0]  = ~(OPA  | OPB);
                                 next_err= 1'b0;
                         end
                         else
@@ -290,7 +285,7 @@ begin
 		begin
                         if(INP_VALID == 2'b11)
                         begin
-                                next_res[WIDTH - 1]  = (OPA  ^ OPB);
+                                next_res[WIDTH - 1:0]  = (OPA  ^ OPB);
                                 next_err = 1'b0;
                         end
                         else
@@ -300,7 +295,7 @@ begin
 		begin
                         if(INP_VALID == 2'b11)
                         begin
-                                next_res[WIDTH - 1] = ~(OPA  ^ OPB);
+                                next_res[WIDTH - 1:0] = ~(OPA  ^ OPB);
                                 next_err = 1'b0;
                         end
                         else		
@@ -310,7 +305,7 @@ begin
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
-                                next_res[WIDTH - 1] = ~(OPA);
+                                next_res[WIDTH - 1:0] = ~(OPA);
                                 next_err = 1'b0;
                         end
                         else
@@ -320,7 +315,7 @@ begin
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                next_res[WIDTH - 1] = ~(OPB);
+                                next_res[WIDTH - 1:0] = ~(OPB);
                                 next_err = 1'b0;
                         end
                         else
@@ -330,7 +325,7 @@ begin
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
-                                next_res[WIDTH - 1] = OPA >> 1;
+                                next_res[WIDTH - 1:0] = OPA >> 1;
                                 next_err = 1'b0;
                         end
                         else
@@ -340,7 +335,7 @@ begin
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
-                                next_res[WIDTH - 1] = OPA << 1;
+                                next_res[WIDTH - 1:0] = OPA << 1;
                                 next_err = 1'b0;
                         end
                         else
@@ -350,7 +345,7 @@ begin
 		 begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                next_res[WIDTH - 1] = OPB >> 1;
+                                next_res[WIDTH - 1:0] = OPB >> 1;
                                 next_err = 1'b0;
                         end
                         else
@@ -360,7 +355,7 @@ begin
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                next_res[WIDTH - 1] = OPB << 1;
+                                next_res[WIDTH - 1:0] = OPB << 1;
                                 next_err = 1'b0;
                         end
                         else
@@ -376,7 +371,7 @@ begin
 				begin
 					next_err =1'b0;
 				end	
-				next_res[WIDTH - 1] = { OPA << OPB[ ($clog2(WIDTH)-1):0],OPA >> OPB[ ($clog2(WIDTH)-1):0] };
+				next_res[WIDTH - 1:0] = (OPA << OPB[ ($clog2(WIDTH)-1):0]) | (OPA >> OPB[ ($clog2(WIDTH)-1):0]);
 			end
 			else
 				next_err <= 1'b1;
@@ -391,7 +386,7 @@ begin
                                 begin
                                         next_err =1'b0;
                                 end
-				next_res[WIDTH - 1] = { OPA >> OPB[($clog2(WIDTH)-1):0] ,OPA << OPB[ ($clog2(WIDTH) -1 ):0] };
+				next_res[WIDTH - 1:0] = (OPA >> OPB[($clog2(WIDTH)-1):0]) | (OPA << OPB[ ($clog2(WIDTH) -1 ):0]);
                         end
                         else
                                 next_err = 1'b1;
@@ -407,7 +402,7 @@ begin
 		current_operation <= 5'b0;
 	end
 	else
-		current_operation <= {CMD,MODE};
+		current_operation <= {MODE,CMD};
 end
 
 // counter logic
@@ -419,7 +414,7 @@ begin
 	end
 	else if	(count_EN)
 	begin
-		if(current_operation == {CMD,MODE})
+		if(current_operation == {MODE,CMD})
 		begin
 			if(count >= (MAX_COUNT))
 				count <=1'b0 + flag;
