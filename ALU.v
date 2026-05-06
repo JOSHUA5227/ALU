@@ -160,7 +160,7 @@ begin
 				next_err <= 1'b1;
 		end
 
-		5'b1_1001:	// 9: OP 9
+		5'b1_1001:	// 9: INCREMENT AND MUL
 		begin
 			count_EN = 1'b1;
 			if(count == 0)
@@ -188,7 +188,7 @@ begin
 				//else do nothing	
 			end
 		end
-		5'b1_1010:	// 10:OP 10	
+		5'b1_1010:	// 10: MUL WITH LEFT SHIFT
 		 begin
                         count_EN = 1'b1;
                         if(count == 0)
@@ -217,7 +217,7 @@ begin
                         end
                 end
 
-		5'b1_1011:	// 11:OP 11	
+		5'b1_1011:	// 11: SIGNED ADDITION WITH SIGNED GLE	
 		begin
 			if(INP_VALID == 2'b11)
 			begin
@@ -230,7 +230,7 @@ begin
 			else
 				next_err = 1'b1;
 		end
-		5'b1_1100:	// 12:OP 12	
+		5'b1_1100:	// 12:OP SIGNED SUBTRACTION WITH SIGNED GLE
 		begin
 		if(INP_VALID == 2'b11)
                         begin
@@ -238,7 +238,7 @@ begin
                                 next_err = 1'b0;
                                 next_res = OPA - OPB;
 
-				next_oflow = ( (OPA[WIDTH-1] == OPB[WIDTH -1]) != next_res[WIDTH-1]) ? 1:0;
+				next_oflow = ( (OPA[WIDTH-1] != OPB[WIDTH -1]) && (next_res[WIDTH-1] != OPA[WIDTH-1] ) )? 1:0;
                         end
                         else
                                 next_err = 1'b1;
