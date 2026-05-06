@@ -28,6 +28,8 @@ assign clk1 = CLK & CE;
 reg [(2*WIDTH)- 1 : 0] next_res;
 reg next_oflow,next_cout,next_g,next_l,next_e,next_err;
 
+parameter MAX_COUNT = 2;
+reg flag; // pipelining
 
 always@(posedge clk1 or posedge RST)
 begin
@@ -38,6 +40,11 @@ begin
                 COUT <= 1'b0;
                 {G,L,E} <= 3'b0;
                 ERR <= 1'b0;
+		count_EN <=1'b0;
+		OPA_reg <=1'b0;
+		OPB_reg <=1'b0;
+		valid_reg <= 1'b0;
+		flag <= 1'b0;
         end
         else
 	begin
@@ -155,21 +162,25 @@ begin
 
 		5'b1_1001:	// 9: OP 9
 		begin
-			count_EN <= 1'b1;
+			count_EN = 1'b1;
 			if(count == 0)
 			begin
-				OPA_reg <= OPA;
-				OPB_reg <= OPB;
-				valid_reg <= INP_VALID;
+				OPA_reg = OPA;
+				OPB_reg = OPB;
+				valid_reg = INP_VALID;
 			end
 			else
 			begin
-				if(count == 2)
+				if(count == MAX_COUNT - flag)
 				begin
 					if(valid_reg == 2'b11)
 					begin
 						next_res = (OPA_reg+1) * (OPB_reg+1);
 						next_err = 1'b0;
+						flag = 1'b1;
+						OPA_reg = OPA;
+                                                OPB_reg = OPB;
+                                                valid_reg = INP_VALID;
 					end
 					else
 						next_err = 1'b1;
@@ -179,21 +190,25 @@ begin
 		end
 		5'b1_1010:	// 10:OP 10	
 		 begin
-                        count_EN <= 1'b1;
+                        count_EN = 1'b1;
                         if(count == 0)
                         begin
-                                OPA_reg <= OPA;
-                                OPB_reg <= OPB;
-                                valid_reg <= INP_VALID;
+                                OPA_reg = OPA;
+                                OPB_reg = OPB;
+                                valid_reg = INP_VALID;
                         end
                         else
                         begin
-                                if(count == 1)
+                                if(count == MAX_COUNT - flag)
                                 begin
                                         if(valid_reg == 2'b11)
                                         begin
                                                 next_res = (OPA_reg << 1) * OPB_reg;
                                                 next_err = 1'b0;
+						flag =1'b1;
+						OPA_reg = OPA;
+                                		OPB_reg = OPB;
+                                		valid_reg = INP_VALID;
                                         end
                                         else
                                                 next_err = 1'b1;
@@ -406,7 +421,7 @@ begin
 	begin
 		if(current_operation == {CMD,MODE})
 		begin
-			if(count >= 2)
+			if(count >= (MAX_COUNT - flag))
 				count <=1'b0;
 			else
 				count <= count + 1;
