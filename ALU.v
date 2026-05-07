@@ -73,7 +73,7 @@ begin
 			OPB_reg <= OPB_reg;
 			valid_reg <= valid_reg;
 		end
-	end
+	endT-05
 
 end
 always@(*)
@@ -177,7 +177,7 @@ begin
 				next_err = 1'b0;
 			end
 			else
-				next_err <= 1'b1;
+				next_err = 1'b1;
 		end
 
 		5'b1_1001:	// 9: INCREMENT AND MUL
