@@ -73,7 +73,7 @@ begin
 			OPB_reg <= OPB_reg;
 			valid_reg <= valid_reg;
 		end
-	endT-05
+	end
 
 end
 always@(*)
