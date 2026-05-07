@@ -29,8 +29,8 @@ reg [(2*WIDTH)- 1 : 0] next_res;
 reg next_oflow,next_cout,next_g,next_l,next_e,next_err;
 
 parameter MAX_COUNT = 2;
-reg flag = 1'b0;
-
+reg flag;
+reg combinational_on; // flag to ensure the combinational block runs after sequential mainitaining the clock delay
 always@(posedge clk1 or posedge RST)
 begin
         if(RST)
@@ -45,6 +45,7 @@ begin
 		OPB_reg <=1'b0;
 		valid_reg <= 1'b0;
 		flag <= 1'b0;
+		combinational_on <=1'b0;
         end
         else
 	begin
@@ -53,6 +54,7 @@ begin
                 COUT <= next_cout;
                 {G,L,E} <= {next_g,next_l,next_e};
                 ERR <= next_err;
+		combinational_on <= ~combinational_on;
 
 		if(count == 0 && ({MODE,CMD} == 5'b1_1001 || {MODE,CMD} == 5'b1_1010))
 		begin
@@ -76,7 +78,7 @@ begin
 	end
 
 end
-always@(*)
+always@(combinational_on)
 begin
 	{next_oflow,next_cout,next_g,next_l,next_e,next_err,count_EN} = 'b0;
 		case({MODE,CMD})
