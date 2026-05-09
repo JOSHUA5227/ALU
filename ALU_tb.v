@@ -11,8 +11,9 @@ wire G_ref,L_ref,E_ref,ERR_ref,OFLOW_ref,COUT_ref,
 
 
 wire [(2*WIDTH)-1:0]RES_dut;
-wire G_dut,L_dut,E_dut,ERR_dut,OFLOW_dut,COUT_dut,
+wire G_dut,L_dut,E_dut,ERR_dut,OFLOW_dut,COUT_dut;
 
+integer passed,failed;
 initial
 	CLK =1'b0;
 
@@ -71,4 +72,27 @@ always
 //ALU_REFERENCE CALL
 //ALU_DUT CALL
 
+	task monitor_scb;
+		begin
+			if(ERR_res == 1 && ERR_dut == 1)
+			begin
+				passed = passed + 1;
+				$display(""); // fill later
+			end
+			else
+			begin
+				if( (RES_ref == RES_dut) && (OFLOW_res ==OFLOW_dut) && (COUT_res == COUT_dut) && (G_ref == G_dut) && (L_ref == L_dut) && (E_ref == E_dut))
+				      	passed = passed + 1;
+					$display("") // fill later		      
+			end
+	task driver_CE_high;
+                CE = 1'b1;
+        endtask
+
+        task driver_CE_low;
+                CE = 1'b0;
+        endtask
+			end
+		end
+	endtask;
 endmodule
