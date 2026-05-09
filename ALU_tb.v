@@ -1,5 +1,17 @@
-`define WIDTH = 8;
 module ALU_tb;
+
+localparam WIDTH = 8;
+
+reg CLK,RST,CE,CIN;
+reg [1:0] INP_VALID;
+reg [WIDTH-1:0] OPA,OPB;
+
+wire [(2*WIDTH)-1:0]RES_ref;
+wire G_ref,L_ref,E_ref,ERR_ref,OFLOW_ref,COUT_ref,
+
+
+wire [(2*WIDTH)-1:0]RES_dut;
+wire G_dut,L_dut,E_dut,ERR_dut,OFLOW_dut,COUT_dut,
 
 initial
 	CLK =1'b0;
@@ -56,6 +68,7 @@ always
 		INP_VALID = i;
 	endtask
 
-
+//ALU_REFERENCE CALL
+//ALU_DUT CALL
 
 endmodule
