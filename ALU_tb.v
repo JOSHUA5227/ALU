@@ -18,7 +18,7 @@ wire G_dut,L_dut,E_dut,ERR_dut,OFLOW_dut,COUT_dut;
 
 integer passed=0,failed=0;
 integer total=0;
-integer i=0,j=0,k=0;
+integer i=0,j=0,k=0,l=0;
 integer temp=1;
 
 initial
@@ -95,70 +95,24 @@ ALU_rtl_design #(.N(WIDTH))dut
 			if( (ERR_ref == 1) && (ERR_dut == 1) )
 			begin
 				passed = passed + 1;
-				$display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",
-$time,
-MODE,
-CMD,
-OPA,
-OPB,
-CIN,
-RES_dut,
-COUT_dut,
-OFLOW_dut,
-G_dut,
-L_dut,
-E_dut,
-ERR_dut);
+				$display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",$time,MODE,CMD,OPA,OPB,CIN,RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
 			end
 			else
 			begin
 				if( (RES_ref == RES_dut) && (OFLOW_ref ==OFLOW_dut) && (COUT_ref == COUT_dut) && (G_ref == G_dut) && (L_ref == L_dut) && (E_ref == E_dut))
 				begin
 					passed = passed + 1;
-					$display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",
-$time,
-MODE,
-CMD,
-OPA,
-OPB,
-CIN,
-RES_dut,
-COUT_dut,
-OFLOW_dut,
-G_dut,
-L_dut,
-E_dut,
-ERR_dut);
+					$display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",$time,MODE,CMD,OPA,OPB,CIN,RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
 				end
 				else
 				begin
 					failed = failed + 1;
 
-					$display("[FAIL] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b",
-$time,
-MODE,
-CMD,
-OPA,
-OPB,
-CIN);
+					$display("[FAIL] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b",$time,MODE,CMD,OPA,OPB,CIN);
 
-					$display(" DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",
-RES_dut,
-COUT_dut,
-OFLOW_dut,
-G_dut,
-L_dut,
-E_dut,
-ERR_dut);
+					$display(" DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
 
-					$display(" REF -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",
-RES_ref,
-COUT_ref,
-OFLOW_ref,
-G_ref,
-L_ref,
-E_ref,
-ERR_ref);
+					$display(" REF -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",RES_ref,COUT_ref,OFLOW_ref,G_ref,L_ref,E_ref,ERR_ref);
 				end
 			end
 		end
@@ -206,76 +160,40 @@ begin
     // MAIN RANDOM TEST LOOP
     // cycle through all modes at negedge
 
-    //ARITHMETIC
-    
-    MODE = 1;
-    for(i = 0; i < 16; i = i + 1) //all modes
-    begin
-	temp = ( (i == 9) || (i == 10))? 3:1;
-	for(j=0;j<4;j= j+ 1) // all input valids
-	begin
-		for(k=0;k<2;k=k+1) // all cin
+     for(l=0;l<2;l++) // all modes
+     begin
+   	 for(i = 0; i < 16; i = i + 1) //all cmds
+    	begin
+		temp = ( (i == 9) || (i == 10))? 3:1;
+		for(j=0;j<4;j= j+ 1) // all input valids
 		begin
-			//RANDOM
-			driver_random_AB(); run_vec(0,i,j,OPA,OPB,k,temp);
-			driver_random_AB(); run_vec(0,i,j,OPA,OPA,k,temp); //same value
-			//SPECIFIC
-			run_vec(0,i,j,8'hFF,8'hFF,k,temp);
-			run_vec(0,i,j,8'h00,8'h00,k,temp);
-			run_vec(0,i,j,8'hFF,8'h00,k,temp);
-			run_vec(0,i,j,8'h00,8'hFF,k,temp);
+			for(k=0;k<2;k=k+1) // all cin
+			begin
+				//RANDOM
+				driver_random_AB(); run_vec(l,i,j,OPA,OPB,k,temp);
+				driver_random_AB(); run_vec(l,i,j,OPA,OPA,k,temp); //same value
+				//SPECIFIC
+				run_vec(l,i,j,8'hFF,8'hFF,k,temp);
+				run_vec(l,i,j,8'h00,8'h00,k,temp);
+				run_vec(l,i,j,8'hFF,8'h00,k,temp);
+				run_vec(l,i,j,8'h00,8'hFF,k,temp);
+		
+				run_vec(l,i,j,8'hFE,8'hFF,k,temp);
+                        	run_vec(l,i,j,8'hFE,8'h00,k,temp);
 
-			run_vec(0,i,j,8'hFE,8'hFF,k,temp);
-                        run_vec(0,i,j,8'hFE,8'h00,k,temp);
+                        	run_vec(l,i,j,8'h00,8'hFE,k,temp);
+                	       	run_vec(l,i,j,8'hFF,8'hFE,k,temp);
+		
+        	                run_vec(l,i,j,8'hFE,8'hFE,k,temp);
 
-                        run_vec(0,i,j,8'h00,8'hFE,k,temp);
-                        run_vec(0,i,j,8'hFF,8'hFE,k,temp);
+				run_vec(l,i,j,8'h80,8'h02,k,temp);
+				run_vec(l,i,j,8'h01,8'h02,k,temp);
 
-                        run_vec(0,i,j,8'hFE,8'hFE,k,temp);
+				run_vec(l,i,j,8'h7F,8'h7F,k,temp);
+			end
 
-			run_vec(0,i,j,8'h80,8'h02,k,temp);
-			run_vec(0,i,j,8'h01,8'h02,k,temp);
-
-			run_vec(0,i,j,8'h7F,8'h7F,k,temp);
 		end
-
-	end
-    end
-
-    //LOGICAL
-
-    MODE = 0;
-    for(i = 0; i < 16; i = i + 1) //all modes
-    begin
-	temp = ( (i == 9) || (i == 10))? 3:1;
-	for(j=0;j<4;j= j+ 1) // all input valids
-	begin
-		for(k=0;k<2;k=k+1) // all cin
-		begin
-			//RANDOM
-			driver_random_AB(); run_vec(0,i,j,OPA,OPB,k,temp);
-			driver_random_AB(); run_vec(0,i,j,OPA,OPA,k,temp); //same value
-			//SPECIFIC
-			run_vec(0,i,j,8'hFF,8'hFF,k,temp);
-			run_vec(0,i,j,8'h00,8'h00,k,temp);
-			run_vec(0,i,j,8'hFF,8'h00,k,temp);
-			run_vec(0,i,j,8'h00,8'hFF,k,temp);
-
-			run_vec(0,i,j,8'hFE,8'hFF,k,temp);
-                        run_vec(0,i,j,8'hFE,8'h00,k,temp);
-
-                        run_vec(0,i,j,8'h00,8'hFE,k,temp);
-                        run_vec(0,i,j,8'hFF,8'hFE,k,temp);
-
-                        run_vec(0,i,j,8'hFE,8'hFE,k,temp);
-
-			run_vec(0,i,j,8'h80,8'h02,k,temp);
-			run_vec(0,i,j,8'h01,8'h02,k,temp);
-
-			run_vec(0,i,j,8'h7F,8'h7F,k,temp);
-		end
-
-	end
+    	end
     end
     $display("------------------------------------------------");
 
