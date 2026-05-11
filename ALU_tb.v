@@ -97,6 +97,23 @@ ALU_rtl_design #(.N(WIDTH))dut
 				passed = passed + 1;
 				$display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",$time,MODE,CMD,OPA,OPB,CIN,RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
 			end
+			else if( (MODE == 1) && (CMD == 8))
+			begin
+				if((G_ref == G_dut) && (L_ref == L_dut) && (E_ref == E_dut))
+				begin
+					 passed = passed + 1;                                                                                                                                $display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",$time,MODE,CMD,OPA,OPB,CIN,RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
+				end
+				else
+				begin
+					 failed = failed + 1;
+
+                                        $display("[FAIL] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b",$time,MODE,CMD,OPA,OPB,CIN);
+
+                                        $display(" DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
+
+                                        $display(" REF -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",RES_ref,COUT_ref,OFLOW_ref,G_ref,L_ref,E_ref,ERR_ref);
+				end
+			end
 			else
 			begin
 				if( (RES_ref == RES_dut) && (OFLOW_ref ==OFLOW_dut) && (COUT_ref == COUT_dut) && (G_ref == G_dut) && (L_ref == L_dut) && (E_ref == E_dut))
@@ -160,7 +177,7 @@ begin
     // MAIN RANDOM TEST LOOP
     // cycle through all modes at negedge
 
-     for(l=0;l<2;l++) // all modes
+     for(l=0;l<2;l=l+1) // all modes
      begin
    	 for(i = 0; i < 16; i = i + 1) //all cmds
     	begin
@@ -190,11 +207,26 @@ begin
 				run_vec(l,i,j,8'h01,8'h02,k,temp);
 
 				run_vec(l,i,j,8'h7F,8'h7F,k,temp);
+				run_vec(l,i,j,8'hF0,8'h04,k,temp);
 			end
 
 		end
     	end
     end
+
+    run_vec(0,0,2'b11,8'h10,8'h20,0,1); 
+    run_vec(1,0,2'b11,8'hF0,8'h0F,0,1);
+
+   run_vec(1,0,2'b11,8'h10,8'h20,0,1);
+   run_vec(0,0,2'b11,8'hF0,8'h0F,0,1);
+
+   @(negedge CLK);
+   CE        = 0;
+   @(posedge CLK);
+   #1 monitor_scb();
+   CE = 1;
+    @(posedge CLK);
+    #1 monitor_scb();
     $display("------------------------------------------------");
 
 
