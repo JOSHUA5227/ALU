@@ -373,7 +373,7 @@ begin
 				begin
 					next_err =1'b0;
 				end	
-				next_res[WIDTH - 1:0] = (OPA << OPB[ ($clog2(WIDTH)-1):0]) | (OPA >> OPB[ ($clog2(WIDTH)-1):0]);
+				next_res[WIDTH - 1:0] = (OPA << OPB[ ($clog2(WIDTH)-1):0]) | (OPA >> (WIDTH -1 - OPB[ ($clog2(WIDTH)-1):0] ));
 			end
 			else
 				next_err <= 1'b1;
@@ -388,7 +388,7 @@ begin
                                 begin
                                         next_err =1'b0;
                                 end
-				next_res[WIDTH - 1:0] = (OPA >> OPB[($clog2(WIDTH)-1):0]) | (OPA << OPB[ ($clog2(WIDTH) -1 ):0]);
+				next_res[WIDTH - 1:0] = (OPA >> OPB[($clog2(WIDTH)-1):0]) | (OPA << (WIDTH -1 - OPB[ ($clog2(WIDTH) -1 ):0] ));
                         end
                         else
                                 next_err = 1'b1;
