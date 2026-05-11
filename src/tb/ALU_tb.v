@@ -1,3 +1,6 @@
+`timescale 1ns/1ns;
+
+
 module ALU_tb;
 
 localparam WIDTH = 8;
@@ -20,6 +23,15 @@ integer passed=0,failed=0;
 integer total=0;
 integer i=0,j=0,k=0,l=0;
 integer temp=1;
+
+
+
+reg [WIDTH-1:0] latch_OPA, latch_OPB;
+reg             latch_CIN;
+reg             latch_MODE;
+reg [3:0]       latch_CMD;
+reg [1:0]       latch_INP_VALID;
+
 
 initial
 	CLK =1'b0;
@@ -95,23 +107,31 @@ ALU_rtl_design #(.N(WIDTH))dut
 			if( (ERR_ref == 1) && (ERR_dut == 1) )
 			begin
 				passed = passed + 1;
-				$display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",$time,MODE,CMD,OPA,OPB,CIN,RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
+				 $display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",
+                 $time, latch_MODE, latch_CMD,
+                 latch_OPA, latch_OPB, latch_CIN,
+                 RES_dut, COUT_dut, OFLOW_dut, G_dut, L_dut, E_dut, ERR_dut);
 			end
 			else if( (MODE == 1) && (CMD == 8))
 			begin
 				if((G_ref == G_dut) && (L_ref == L_dut) && (E_ref == E_dut))
 				begin
-					 passed = passed + 1;                                                                                                                                $display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",$time,MODE,CMD,OPA,OPB,CIN,RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
+					 passed = passed + 1;
+					  $display("[PASS] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b | DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",
+                 $time, latch_MODE, latch_CMD,
+                 latch_OPA, latch_OPB, latch_CIN,
+                 RES_dut, COUT_dut, OFLOW_dut, G_dut, L_dut, E_dut, ERR_dut);
+
 				end
 				else
 				begin
 					 failed = failed + 1;
-
-                                        $display("[FAIL] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b",$time,MODE,CMD,OPA,OPB,CIN);
-
-                                        $display(" DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
-
-                                        $display(" REF -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",RES_ref,COUT_ref,OFLOW_ref,G_ref,L_ref,E_ref,ERR_ref);
+					 $display("[FAIL] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b",
+                     $time, latch_MODE, latch_CMD, latch_OPA, latch_OPB, latch_CIN);
+            $display("  DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",
+                     RES_dut, COUT_dut, OFLOW_dut, G_dut, L_dut, E_dut, ERR_dut);
+            $display("  REF -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",
+                     RES_ref, COUT_ref, OFLOW_ref, G_ref, L_ref, E_ref, ERR_ref);
 				end
 			end
 			else
@@ -125,7 +145,7 @@ ALU_rtl_design #(.N(WIDTH))dut
 				begin
 					failed = failed + 1;
 
-					$display("[FAIL] TIME=%0t | MODE=%b CMD=%b | OPA=%0d OPB=%0d CIN=%b",$time,MODE,CMD,OPA,OPB,CIN);
+					$display("[FAIL] TIME=%0t | MODE=%b CMD=%b |INV=%b | OPA=%0d OPB=%0d CIN=%b",$time,latch_MODE,latch_CMD,latch_INP_VALID,latch_OPA,latch_OPB,latch_CIN);
 
 					$display(" DUT -> RES=%0d COUT=%b OFLOW=%b G=%b L=%b E=%b ERR=%b",RES_dut,COUT_dut,OFLOW_dut,G_dut,L_dut,E_dut,ERR_dut);
 
@@ -152,6 +172,14 @@ ALU_rtl_design #(.N(WIDTH))dut
         	OPA = a;
         	OPB = b;
         	CIN = cin_in;
+
+		latch_MODE = mode_in;
+        	latch_CMD = cmd_in;
+        	latch_INP_VALID = inv;
+       		latch_OPA= a;
+        	latch_OPB= b;
+        	latch_CIN= cin_in;
+
         	repeat(cycles) @(posedge CLK);
        	 	#1;
         	monitor_scb();
@@ -239,4 +267,10 @@ begin
     $finish;
 end
 
+
+initial
+begin
+	$dumpfile("wave.vcd");
+	$dumpvars(0,ALU_tb);
+end	
 endmodule

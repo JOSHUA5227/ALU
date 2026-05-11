@@ -135,7 +135,7 @@ begin
 		begin
 			if(INP_VALID[0] == 1'b1)
 			begin
-				next_res = OPA + 1;
+				next_res[WIDTH-1:0]  = OPA + 1;
 			end
 			else
 				next_err = 1'b1;
@@ -145,7 +145,7 @@ begin
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
-                               	next_res = OPA - 1;
+                               	next_res[WIDTH-1:0]  = OPA - 1;
                         end
                         else
                                 next_err = 1'b1;
@@ -155,7 +155,7 @@ begin
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                next_res = OPB + 1;
+                                next_res[WIDTH-1:0]  = OPB + 1;
                         end
                         else
                                 next_err = 1'b1;
@@ -165,7 +165,7 @@ begin
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                next_res = OPB - 1;
+                                next_res[WIDTH-1:0]  = OPB - 1;
                         end
                         else
                                 next_err = 1'b1;
@@ -247,6 +247,7 @@ begin
 		begin
 			if(INP_VALID == 2'b11)
 			begin
+				next_res = 0;
 				next_res[WIDTH - 1:0] = OPA  & OPB;
 				next_err = 1'b0;
 			end
@@ -257,6 +258,7 @@ begin
 		 begin
                         if(INP_VALID == 2'b11)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0] = ~(OPA  & OPB);
                                 next_err = 1'b0;
                         end
@@ -267,6 +269,7 @@ begin
 		 begin
                         if(INP_VALID == 2'b11)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0]  = OPA | OPB;
                                 next_err = 1'b0;
                         end
@@ -277,6 +280,7 @@ begin
 		begin
                         if(INP_VALID == 2'b11)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0]  = ~(OPA  | OPB);
                                 next_err= 1'b0;
                         end
@@ -287,6 +291,7 @@ begin
 		begin
                         if(INP_VALID == 2'b11)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0]  = (OPA  ^ OPB);
                                 next_err = 1'b0;
                         end
@@ -297,6 +302,7 @@ begin
 		begin
                         if(INP_VALID == 2'b11)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0] = ~(OPA  ^ OPB);
                                 next_err = 1'b0;
                         end
@@ -307,6 +313,7 @@ begin
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0] = ~(OPA);
                                 next_err = 1'b0;
                         end
@@ -317,6 +324,7 @@ begin
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0] = ~(OPB);
                                 next_err = 1'b0;
                         end
@@ -327,6 +335,7 @@ begin
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0] = OPA >> 1;
                                 next_err = 1'b0;
                         end
@@ -337,6 +346,7 @@ begin
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0] = OPA << 1;
                                 next_err = 1'b0;
                         end
@@ -347,6 +357,7 @@ begin
 		 begin
                         if(INP_VALID[1] == 1'b1)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0] = OPB >> 1;
                                 next_err = 1'b0;
                         end
@@ -357,6 +368,7 @@ begin
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
+				next_res = 0;
                                 next_res[WIDTH - 1:0] = OPB << 1;
                                 next_err = 1'b0;
                         end
@@ -373,10 +385,14 @@ begin
 				begin
 					next_err =1'b0;
 				end	
-				next_res[WIDTH - 1:0] = (OPA << OPB[ ($clog2(WIDTH)-1):0]) | (OPA >> (WIDTH -1 - OPB[ ($clog2(WIDTH)-1):0] ));
+				next_res = 0;
+				if(OPB == 0)
+					next_res = OPA;
+				else
+					next_res[WIDTH - 1:0] = (OPA << OPB[ ($clog2(WIDTH)-1):0]) | (OPA >> ( (WIDTH) -1 - OPB[ ($clog2(WIDTH)-1):0] ));
 			end
 			else
-				next_err <= 1'b1;
+				next_err = 1'b1;
 		end
 		5'b0_1101:	// 13:ROR_A_B	
 		 begin
@@ -388,7 +404,11 @@ begin
                                 begin
                                         next_err =1'b0;
                                 end
-				next_res[WIDTH - 1:0] = (OPA >> OPB[($clog2(WIDTH)-1):0]) | (OPA << (WIDTH -1 - OPB[ ($clog2(WIDTH) -1 ):0] ));
+				next_res = 0;
+				if(OPB == 0)
+					next_res = OPA;
+				else
+					next_res[WIDTH - 1:0] = (OPA >> OPB[($clog2(WIDTH)-1):0]) | (OPA << ( (WIDTH) -1 - OPB[ ($clog2(WIDTH) -1 ):0] ));
                         end
                         else
                                 next_err = 1'b1;
