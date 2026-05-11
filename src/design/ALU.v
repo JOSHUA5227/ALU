@@ -135,7 +135,7 @@ begin
 		begin
 			if(INP_VALID[0] == 1'b1)
 			begin
-				next_res = OPA + 1;
+				next_res[WIDTH-1:0] = OPA + 1;
 			end
 			else
 				next_err = 1'b1;
@@ -145,7 +145,7 @@ begin
 		begin
                         if(INP_VALID[0] == 1'b1)
                         begin
-                               	next_res = OPA - 1;
+                               	next_res[WIDTH-1:0]  = OPA - 1;
                         end
                         else
                                 next_err = 1'b1;
@@ -155,7 +155,7 @@ begin
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                next_res = OPB + 1;
+                                next_res[WIDTH-1:0]  = OPB + 1;
                         end
                         else
                                 next_err = 1'b1;
@@ -165,7 +165,7 @@ begin
 		begin
                         if(INP_VALID[1] == 1'b1)
                         begin
-                                next_res = OPB - 1;
+                                next_res[WIDTH-1:0]  = OPB - 1;
                         end
                         else
                                 next_err = 1'b1;
